@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduPilot AI - Multi-Agent Mentor Platform</title>
+  <!-- Outfit and Inter Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              bg: '#0B132B',
+              card: '#1C2541',
+              blue: '#0072FF',
+              cyan: '#00F2FE',
+              glow: 'rgba(0, 242, 254, 0.15)',
+            },
+            agent: {
+              career: '#3B82F6',
+              planner: '#06B6D4',
+              resource: '#A855F7',
+              evaluator: '#22C55E',
+              coach: '#F97316',
+            }
+          },
+          boxShadow: {
+            glow: '0 0 15px rgba(0, 242, 254, 0.35)',
+            'glow-blue': '0 0 15px rgba(0, 114, 255, 0.35)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0B132B;
+    }
+    h1, h2, h3, h4, .font-outfit {
+      font-family: 'Outfit', sans-serif;
+    }
+    /* Glow pulse animations */
+    @keyframes pulseGlow {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+      }
+      50% {
+        transform: scale(1.03);
+        box-shadow: 0 0 20px rgba(0, 242, 254, 0.5);
+      }
+    }
+    .animate-pulse-glow {
+      animation: pulseGlow 2s infinite ease-in-out;
+    }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B132B;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1C2541;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #0072FF;
+    }
+  </style>
+</head>
+<body class="text-slate-200 min-h-screen flex overflow-hidden">
+
+  <!-- 1. LEFT SIDEBAR -->
+  <aside class="w-80 bg-brand-card border-r border-slate-800/80 flex flex-col p-6 space-y-6 flex-shrink-0">
+    <!-- Logo -->
+    <div class="flex items-center space-x-3">
+      <div class="p-2.5 bg-brand-blue/10 rounded-xl border border-brand-blue/40 text-brand-cyan shadow-glow">
+        <i data-lucide="sparkles" class="h-6 w-6"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold tracking-wide text-white">EduPilot AI</h1>
+        <span class="text-[10px] text-brand-cyan tracking-wider font-mono block">GOOGLE ADK FRAMEWORK</span>
+      </div>
+    </div>
+
+    <!-- Status pill -->
+    <div class="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-800/50">
+      <span class="text-xs text-slate-400 flex items-center gap-1.5">
+        <i data-lucide="activity" class="h-3.5 w-3.5"></i>
+        Backend Server
+      </span>
+      <span id="backend-status" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">
+        CHECKING
+      </span>
+    </div>
+
+    <!-- Streak -->
+    <div class="bg-gradient-to-br from-brand-card to-slate-900 p-5 rounded-2xl border border-slate-800/60 flex items-center space-x-4 relative overflow-hidden">
+      <div class="p-3 bg-orange-500/10 rounded-xl border border-orange-500/30 text-orange-400">
+        <i data-lucide="flame" class="h-6 w-6"></i>
+      </div>
+      <div>
+        <span class="text-[10px] text-slate-400 uppercase tracking-widest font-mono">Learning Velocity</span>
+        <h2 class="text-2xl font-bold text-white">4 Day Streak</h2>
+      </div>
+    </div>
+
+    <!-- Target Role -->
+    <div class="space-y-2">
+      <span class="text-[10px] text-slate-500 uppercase tracking-wider font-mono">Active Target Path</span>
+      <div id="target-role-card" class="p-4 bg-slate-900/40 rounded-xl border border-dashed border-slate-800 text-center">
+        <p class="text-xs text-slate-500">No career roadmap active.</p>
+        <span class="text-[10px] text-slate-600 block mt-1">Submit onboarding message to generate</span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 flex flex-col space-y-1.5 pt-4">
+      <button onclick="switchTab('chat')" id="tab-btn-chat" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all bg-brand-blue text-white shadow-glow-blue">
+        <i data-lucide="compass" class="h-4.5 w-4.5"></i>
+        <span>AI Mentor Chat</span>
+      </button>
+      <button onclick="switchTab('roadmap')" id="tab-btn-roadmap" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-slate-400 hover:bg-slate-900/50 hover:text-slate-100">
+        <i data-lucide="map" class="h-4.5 w-4.5"></i>
+        <span>Milestone Roadmaps</span>
+      </button>
+      <button onclick="switchTab('portfolio')" id="tab-btn-portfolio" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-slate-400 hover:bg-slate-900/50 hover:text-slate-100">
+        <i data-lucide="award" class="h-4.5 w-4.5"></i>
+        <span>Graded Portfolio</span>
+      </button>
+      <button onclick="switchTab('settings')" id="tab-btn-settings" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-slate-400 hover:bg-slate-900/50 hover:text-slate-100">
+        <i data-lucide="settings" class="h-4.5 w-4.5"></i>
+        <span>System Settings</span>
+      </button>
+    </nav>
+
+    <!-- Reset -->
+    <div class="pt-4 border-t border-slate-800/80">
+      <button onclick="resetSession()" class="w-full flex items-center justify-center gap-1.5 py-2 px-3 text-xs bg-slate-900 text-slate-500 rounded-lg hover:text-slate-300 border border-slate-800 hover:border-slate-700 transition">
+        <i data-lucide="rotate-ccw" class="h-3 w-3"></i>
+        Reset Learning State
+      </button>
+    </div>
+  </aside>
+
+  <!-- 2. MIDDLE AREA (TABS CONTENT) -->
+  <main class="flex-1 flex flex-col min-w-0 bg-slate-950 overflow-hidden">
+    <header class="h-16 border-b border-slate-900 bg-brand-bg/50 backdrop-blur-md px-8 flex items-center justify-between flex-shrink-0">
+      <h2 id="header-title" class="text-sm font-bold font-mono tracking-wider text-slate-400">ACTIVE CHAT TRANSCRIPT</h2>
+      <div class="flex items-center gap-2 text-xs bg-slate-900/40 px-3 py-1 rounded-md border border-slate-800/50 text-slate-400">
+        <span class="w-1.5 h-1.5 rounded-full bg-brand-cyan shadow-glow animate-pulse"></span>
+        Session ID: <span id="session-id-display" class="font-mono text-slate-300">...</span>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      
+      <!-- TAB: Chat -->
+      <div id="tab-chat" class="h-full flex flex-col justify-between">
+        <div id="chat-messages" class="flex-1 space-y-4 overflow-y-auto pr-2 pb-4">
+          <!-- Dynamically populated -->
+        </div>
+        
+        <form id="chat-form" onsubmit="sendMessage(event)" class="relative pt-4 border-t border-slate-900/80 flex-shrink-0">
+          <input type="text" id="chat-input" placeholder="Ask EduPilot (e.g. 'Help me become a machine learning engineer' or 'Evaluate code')" class="w-full bg-brand-card border border-slate-800 rounded-xl py-3.5 pl-4 pr-12 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-blue/80 focus:shadow-glow-blue transition-all">
+          <button type="submit" class="absolute right-3 top-7 p-1.5 bg-brand-blue text-white rounded-lg hover:shadow-glow-blue transition-all">
+            <i data-lucide="send" class="h-4 w-4"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- TAB: Milestone Roadmaps -->
+      <div id="tab-roadmap" class="hidden space-y-6">
+        <div class="bg-brand-card p-6 rounded-2xl border border-slate-800/80">
+          <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+            <i data-lucide="map" class="h-5 w-5 text-brand-cyan"></i>
+            Roadmap Milestone List
+          </h3>
+          <p class="text-xs text-slate-400 mb-6">Check off milestones as you study to automatically log completion grades.</p>
+          <div id="milestones-list" class="space-y-4">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <div id="project-eval-form-container" class="bg-brand-card p-6 rounded-2xl border border-slate-800/80 hidden">
+          <h3 class="text-md font-bold text-white mb-4 flex items-center gap-2">
+            <i data-lucide="file-code" class="h-5 w-5 text-brand-cyan"></i>
+            Submit Project for Review
+          </h3>
+          <form onsubmit="submitProject(event)" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1 font-mono uppercase">Project Title</label>
+                <input type="text" id="project-title" required placeholder="e.g. Pandas Student Registry Analysis" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-brand-blue">
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1 font-mono uppercase">Target Milestone</label>
+                <select class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-400 focus:outline-none">
+                  <option>Milestone 3: Deep Learning Capstone</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1 font-mono uppercase">Project Description</label>
+              <textarea id="project-desc" required rows="2" placeholder="Detail what logic your project resolves..." class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-brand-blue"></textarea>
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1 font-mono uppercase">Code Snippet (Optional)</label>
+              <textarea id="project-code" rows="4" placeholder="Paste python code snippet here..." class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-300 font-mono focus:outline-none focus:border-brand-blue"></textarea>
+            </div>
+            <button type="submit" class="py-2.5 px-4 bg-brand-cyan hover:shadow-glow text-slate-950 font-bold rounded-lg text-xs transition">
+              Submit to Progress Evaluator
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB: Graded Portfolio -->
+      <div id="tab-portfolio" class="hidden bg-brand-card p-6 rounded-2xl border border-slate-800/80">
+        <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+          <i data-lucide="award" class="h-5 w-5 text-brand-cyan"></i>
+          Student Portfolio Project Grades
+        </h3>
+        <p class="text-xs text-slate-400 mb-6">Your evaluated submissions, grading scores, and coach feedback are catalogued below.</p>
+        <div id="portfolio-list" class="space-y-6">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- TAB: Settings -->
+      <div id="tab-settings" class="hidden bg-brand-card p-6 rounded-2xl border border-slate-800/80 max-w-xl">
+        <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+          <i data-lucide="settings" class="h-5 w-5 text-brand-cyan"></i>
+          Agent Settings
+        </h3>
+        <p class="text-xs text-slate-400 mb-6">Configure execution parameters, model endpoints, and simulation mode targets.</p>
+        <form onsubmit="saveSettings(event)" class="space-y-4">
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1 font-mono uppercase">Simulation / Mock Mode</label>
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="settings-mock" class="h-4.5 w-4.5 rounded bg-slate-950 border-slate-800 text-brand-blue cursor-pointer">
+              <span class="text-xs text-slate-300">Fallback to simulated responses (Allows testing without active Gemini API keys)</span>
+            </div>
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1.5 font-mono uppercase">Google ADK Model Target</label>
+            <select id="settings-model" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-300 focus:outline-none focus:border-brand-blue">
+              <option value="gemini-2.5-flash">gemini-2.5-flash (Standard model)</option>
+              <option value="gemini-2.5-pro">gemini-2.5-pro (Advanced coding)</option>
+              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+            </select>
+          </div>
+          <button type="submit" class="py-2.5 px-4 bg-brand-blue hover:shadow-glow-blue text-white font-bold rounded-lg text-xs transition">
+            Save Configuration
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- 3. RIGHT SIDEBAR: Agent Connection Routing Map -->
+  <aside class="w-80 bg-brand-card border-l border-slate-800/80 flex flex-col p-6 space-y-6 flex-shrink-0">
+    <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+      <h3 class="text-xs font-bold font-mono tracking-wider text-slate-400 flex items-center gap-1.5">
+        <i data-lucide="activity" class="h-4 w-4 text-brand-cyan animate-pulse"></i>
+        AGENT ROUTING MAP
+      </h3>
+      <span class="text-[9px] bg-brand-blue/15 border border-brand-blue/30 text-brand-cyan px-2 py-0.5 rounded-full font-mono">REALTIME</span>
+    </div>
+
+    <p class="text-[11px] text-slate-400 leading-relaxed">
+      This connection graph visualizes the Orchestrator routing user prompts to specialized sub-agents in real-time.
+    </p>
+
+    <!-- Node Graph -->
+    <div class="flex-1 flex flex-col justify-center space-y-5 relative">
+      <!-- Orchestrator Node -->
+      <div class="flex justify-center z-10">
+        <div class="px-4 py-2.5 bg-slate-900 border-2 border-indigo-500 rounded-xl text-center shadow-md min-w-[150px] relative">
+          <span class="text-[9px] uppercase font-mono text-indigo-400 font-bold block">DIRECTOR</span>
+          <span class="text-xs font-bold text-white">Orchestrator Agent</span>
+          <div class="absolute w-0.5 h-6 bg-indigo-500/20 top-full left-1/2 -translate-x-1/2"></div>
+        </div>
+      </div>
+
+      <!-- Vertical connecting line -->
+      <div class="absolute top-[28%] bottom-[20%] left-1/2 w-0.5 bg-slate-800 -translate-x-1/2 z-0"></div>
+
+      <!-- Sub Nodes -->
+      <div class="space-y-3 z-10">
+        <div id="node-career" class="p-3 bg-slate-900 border border-slate-800 text-center rounded-xl opacity-60 transition-all duration-300">
+          <div class="flex items-center justify-between">
+            <span class="text-[8px] font-mono tracking-wider font-bold">AGENT</span>
+            <span class="node-badge text-[8px] bg-blue-500/10 text-blue-400 px-1 py-0.2 rounded hidden">ACTIVE</span>
+          </div>
+          <h4 class="text-xs font-bold mt-1 text-white">Career Advisor</h4>
+        </div>
+
+        <div id="node-planner" class="p-3 bg-slate-900 border border-slate-800 text-center rounded-xl opacity-60 transition-all duration-300">
+          <div class="flex items-center justify-between">
+            <span class="text-[8px] font-mono tracking-wider font-bold">AGENT</span>
+            <span class="node-badge text-[8px] bg-cyan-500/10 text-cyan-400 px-1 py-0.2 rounded hidden">ACTIVE</span>
+          </div>
+          <h4 class="text-xs font-bold mt-1 text-white">Learning Planner</h4>
+        </div>
+
+        <div id="node-resource" class="p-3 bg-slate-900 border border-slate-800 text-center rounded-xl opacity-60 transition-all duration-300">
+          <div class="flex items-center justify-between">
+            <span class="text-[8px] font-mono tracking-wider font-bold">AGENT</span>
+            <span class="node-badge text-[8px] bg-purple-500/10 text-purple-400 px-1 py-0.2 rounded hidden">ACTIVE</span>
+          </div>
+          <h4 class="text-xs font-bold mt-1 text-white">Resource Hunter</h4>
+        </div>
+
+        <div id="node-evaluator" class="p-3 bg-slate-900 border border-slate-800 text-center rounded-xl opacity-60 transition-all duration-300">
+          <div class="flex items-center justify-between">
+            <span class="text-[8px] font-mono tracking-wider font-bold">AGENT</span>
+            <span class="node-badge text-[8px] bg-green-500/10 text-green-400 px-1 py-0.2 rounded hidden">ACTIVE</span>
+          </div>
+          <h4 class="text-xs font-bold mt-1 text-white">Progress Evaluator</h4>
+        </div>
+
+        <div id="node-coach" class="p-3 bg-slate-900 border border-slate-800 text-center rounded-xl opacity-60 transition-all duration-300">
+          <div class="flex items-center justify-between">
+            <span class="text-[8px] font-mono tracking-wider font-bold">AGENT</span>
+            <span class="node-badge text-[8px] bg-orange-500/10 text-orange-400 px-1 py-0.2 rounded hidden">ACTIVE</span>
+          </div>
+          <h4 class="text-xs font-bold mt-1 text-white">Motivation Coach</h4>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="bg-slate-900/40 p-4 rounded-xl border border-slate-800/50 text-[10px] space-y-2">
+      <span class="font-mono text-slate-500 block uppercase font-bold">Color Index</span>
+      <div class="grid grid-cols-2 gap-1.5 text-slate-400">
+        <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> Career</span>
+        <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-cyan-400 rounded-full"></span> Planner</span>
+        <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-purple-500 rounded-full"></span> Resource</span>
+        <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Evaluate</span>
+        <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-orange-500 rounded-full"></span> Coach</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Script Logic -->
+  <script>
+    // State management variables
+    let sessionId = "session_web_demo";
+    let activeTab = "chat";
+    let isBackendOnline = false;
+    
+    const API_BASE = "http://localhost:8000/api";
+
+    // Init
+    window.onload = async () => {
+      document.getElementById("session-id-display").innerText = sessionId;
+      await checkBackendHealth();
+      await fetchSessionData();
+      lucide.createIcons();
+    };
+
+    async function checkBackendHealth() {
+      try {
+        const response = await fetch("http://localhost:8000/");
+        if (response.ok) {
+          isBackendOnline = true;
+          const statusEl = document.getElementById("backend-status");
+          statusEl.innerText = "ONLINE";
+          statusEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20";
+        }
+      } catch (err) {
+        isBackendOnline = false;
+        const statusEl = document.getElementById("backend-status");
+        statusEl.innerText = "SIMULATOR";
+        statusEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20";
+      }
+    }
+
+    async function fetchSessionData() {
+      if (isBackendOnline) {
+        try {
+          // Load Profile
+          const profileRes = await fetch(`${API_BASE}/sessions/${sessionId}`);
+          if (profileRes.ok) {
+            const profile = await profileRes.json();
+            updateProfileUI(profile.target_role, profile.career_interests);
+          }
+          // Load Messages
+          const messagesRes = await fetch(`${API_BASE}/sessions/${sessionId}/history`);
+          if (messagesRes.ok) {
+            const history = await messagesRes.json();
+            renderMessages(history.messages);
+          }
+          // Load Milestones
+          const milestonesRes = await fetch(`${API_BASE}/sessions/${sessionId}/milestones`);
+          if (milestonesRes.ok) {
+            const mData = await milestonesRes.json();
+            renderMilestones(mData.milestones);
+          }
+          // Load Projects
+          const projectsRes = await fetch(`${API_BASE}/sessions/${sessionId}/projects`);
+          if (projectsRes.ok) {
+            const pData = await projectsRes.json();
+            renderPortfolio(pData.projects);
+          }
+          // Load Settings
+          const settingsRes = await fetch(`${API_BASE}/settings`);
+          if (settingsRes.ok) {
+            const sData = await settingsRes.json();
+            document.getElementById("settings-mock").checked = sData.mock_mode;
+            document.getElementById("settings-model").value = sData.gemini_model;
+          }
+        } catch (err) {
+          console.error("Error reading session from backend", err);
+          loadMockData();
+        }
+      } else {
+        loadMockData();
+      }
+    }
+
+    function updateProfileUI(role, interests) {
+      const card = document.getElementById("target-role-card");
+      if (role) {
+        let interestsHTML = (interests || []).map(i => `<span class="text-[9px] bg-slate-900 text-slate-300 px-2 py-0.5 rounded-full border border-slate-800">${i}</span>`).join(" ");
+        card.innerHTML = `
+          <div class="text-left">
+            <h3 class="text-sm font-semibold text-white">${role}</h3>
+            <p class="text-xs text-brand-cyan/80 mt-1">Beginner Level</p>
+            <div class="flex flex-wrap gap-1 mt-2">${interestsHTML}</div>
+          </div>
+        `;
+      }
+    }
+
+    function renderMessages(messagesList) {
+      const chatMessages = document.getElementById("chat-messages");
+      chatMessages.innerHTML = "";
+      
+      if (!messagesList || messagesList.length === 0) {
+        chatMessages.innerHTML = `
+          <div class="p-5 rounded-2xl border border-slate-700/50 bg-brand-card/40 text-sm leading-relaxed max-w-[90%]">
+            <div class="flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-wider text-brand-cyan mb-2">
+              <span class="w-1.5 h-1.5 bg-brand-cyan rounded-full shadow-glow"></span>
+              Orchestrator
+            </div>
+            👋 Hello! I am <strong>EduPilot AI</strong>, your multi-agent mentor. I help you plan career paths, learn skills, search GitHub/YouTube resources, evaluate your code, and maintain streak goals!<br><br>To begin, tell me about your goals (e.g. <em>'I want to learn frontend React'</em> or <em>'Help me become an ML engineer'</em>).
+          </div>
+        `;
+        return;
+      }
+
+      messagesList.forEach(msg => {
+        const isUser = msg.role === "user";
+        const bubble = document.createElement("div");
+        
+        let borderStyle = "bg-brand-card/40 border-slate-700/50 max-w-[90%]";
+        if (isUser) {
+          borderStyle = "bg-brand-blue/15 border-brand-blue/30 text-slate-100 ml-auto max-w-[80%]";
+        } else {
+          const c = msg.content;
+          if (c.includes("Blue") || c.includes("Guidance") || c.includes("Career")) {
+            borderStyle = "border-l-4 border-l-blue-500 bg-brand-card/50 max-w-[90%]";
+          } else if (c.includes("Cyan") || c.includes("Roadmap") || c.includes("Syllabus")) {
+            borderStyle = "border-l-4 border-l-cyan-400 bg-brand-card/50 max-w-[90%]";
+          } else if (c.includes("Purple") || c.includes("Resource") || c.includes("Hunter")) {
+            borderStyle = "border-l-4 border-l-purple-500 bg-brand-card/50 max-w-[90%]";
+          } else if (c.includes("Green") || c.includes("Evaluator") || c.includes("Quiz")) {
+            borderStyle = "border-l-4 border-l-green-500 bg-brand-card/50 max-w-[90%]";
+          } else if (c.includes("Orange") || c.includes("Coach") || c.includes("Streak")) {
+            borderStyle = "border-l-4 border-l-orange-500 bg-brand-card/50 max-w-[90%]";
+          }
+        }
+        
+        bubble.className = `p-5 rounded-2xl border text-sm leading-relaxed transition-all shadow-sm ${borderStyle}`;
+        
+        let label = "";
+        if (!isUser) {
+          label = `<div class="flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-wider text-brand-cyan mb-2">
+            <span class="w-1.5 h-1.5 bg-brand-cyan rounded-full shadow-glow"></span>
+            ${msg.agent_name || "Orchestrator"}
+          </div>`;
+        }
+
+        bubble.innerHTML = `${label}<div class="whitespace-pre-wrap">${convertMarkdownToHTML(msg.content)}</div>`;
+        chatMessages.appendChild(bubble);
+      });
+      
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function renderMilestones(milestonesList) {
+      const container = document.getElementById("milestones-list");
+      container.innerHTML = "";
+      
+      if (!milestonesList || milestonesList.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl">
+            <i data-lucide="alert-triangle" class="h-8 w-8 mx-auto text-slate-600 mb-2"></i>
+            <p class="text-sm">No milestones generated yet. Ask AI Mentor to make a plan!</p>
+          </div>
+        `;
+        document.getElementById("project-eval-form-container").classList.add("hidden");
+        lucide.createIcons();
+        return;
+      }
+
+      document.getElementById("project-eval-form-container").classList.remove("hidden");
+
+      milestonesList.forEach(m => {
+        const item = document.createElement("div");
+        item.className = `p-5 rounded-xl border transition-all ${m.is_completed ? 'bg-green-500/5 border-green-500/20' : 'bg-slate-900/50 border-slate-800/60'}`;
+        
+        let feedbackHTML = "";
+        if (m.feedback) {
+          feedbackHTML = `
+            <div class="mt-3 p-3 bg-slate-900 rounded-lg text-xs border border-slate-800/80">
+              <span class="text-[9px] uppercase font-mono text-green-400 font-bold block mb-1">Evaluator Feedback (Score: ${m.score}/100)</span>
+              ${m.feedback}
+            </div>
+          `;
+        }
+
+        item.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="flex items-start gap-4">
+              <input type="checkbox" ${m.is_completed ? 'checked' : ''} onchange="toggleMilestone(${m.id}, ${m.is_completed})" class="mt-1 h-5 w-5 rounded bg-slate-800 border-slate-700 text-brand-cyan focus:ring-0 cursor-pointer">
+              <div>
+                <h4 class="text-sm font-bold ${m.is_completed ? 'text-slate-300 line-through' : 'text-white'}">${m.title}</h4>
+                <p class="text-xs text-slate-400 mt-1">${m.description}</p>
+                ${feedbackHTML}
+              </div>
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${m.is_completed ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-slate-950 text-slate-500 border border-slate-800'}">
+              ${m.is_completed ? "COMPLETED" : "PENDING"}
+            </span>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    function renderPortfolio(projectsList) {
+      const container = document.getElementById("portfolio-list");
+      container.innerHTML = "";
+      
+      if (!projectsList || projectsList.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl">
+            <i data-lucide="alert-triangle" class="h-8 w-8 mx-auto text-slate-600 mb-2"></i>
+            <p class="text-sm">No project submissions evaluated yet.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      projectsList.forEach(p => {
+        const item = document.createElement("div");
+        item.className = "p-6 bg-slate-900/60 rounded-xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6";
+        
+        let codeHTML = "";
+        if (p.code_snippet) {
+          codeHTML = `
+            <details class="mt-2 text-xs">
+              <summary class="cursor-pointer text-brand-cyan hover:underline">View Submitted Code</summary>
+              <pre class="mt-2 p-3 bg-slate-950 text-slate-300 font-mono text-[10px] rounded border border-slate-800 overflow-x-auto">${p.code_snippet}</pre>
+            </details>
+          `;
+        }
+
+        item.innerHTML = `
+          <div class="flex-1 space-y-2">
+            <div class="flex items-center gap-2.5">
+              <h4 class="text-sm font-bold text-white">${p.title}</h4>
+              <span class="text-[10px] text-slate-500 font-mono">${new Date(p.created_at || Date.now()).toLocaleDateString()}</span>
+            </div>
+            <p class="text-xs text-slate-400">${p.description}</p>
+            <div class="p-3.5 bg-slate-950 rounded-lg text-xs border border-slate-800/80 mt-3">
+              <span class="text-[9px] uppercase font-mono text-green-400 font-bold block mb-1">Evaluator Feedback</span>
+              ${p.feedback}
+            </div>
+            ${codeHTML}
+          </div>
+          <div class="flex flex-col items-center justify-center p-5 bg-green-500/10 border border-green-500/20 rounded-xl min-w-[120px] flex-shrink-0">
+            <span class="text-[10px] font-mono text-green-400 tracking-wider">GRADE SCORE</span>
+            <span class="text-3xl font-extrabold text-white mt-1">${p.score}</span>
+            <span class="text-[9px] text-slate-500 mt-1">out of 100</span>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    async function sendMessage(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById("chat-input");
+      const text = input.value.trim();
+      if (!text) return;
+      
+      input.value = "";
+      
+      // Optimistic user bubble
+      appendLocalMessage("user", text);
+      
+      // Light up nodes based on routing heuristics
+      const activeAgents = mockRoutingTrace(text);
+      highlightRoutingGraph(activeAgents);
+
+      if (isBackendOnline) {
+        try {
+          const response = await fetch(`${API_BASE}/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: sessionId, message: text })
+          });
+          if (response.ok) {
+            const data = await response.json();
+            appendLocalMessage("assistant", data.response, "Orchestrator");
+            // Set final completed logs
+            updateFinalRoutingGraph(data.execution_logs);
+            // Re-fetch milestones/profile
+            setTimeout(fetchSessionData, 1000);
+          }
+        } catch (err) {
+          console.error(err);
+          appendLocalMessage("assistant", "❌ *Lost connection to FastAPI server.*");
+        }
+      } else {
+        // Simulated response cascades
+        setTimeout(() => {
+          let responseText = "";
+          activeAgents.forEach(agent => {
+            if (agent === "Career Advisor") {
+              responseText += "### 🧭 Career Guidance: Machine Learning Engineer (Color: Blue)\n\nMatches interests! Target role set to **Machine Learning Engineer**.";
+              updateProfileUI("Machine Learning Engineer", ["Python", "Math", "Statistics"]);
+            } else if (agent === "Learning Planner") {
+              responseText += "\n\n---\n\n### 🗺️ Learning Planner (Color: Cyan)\n\nGenerated 3 steps:\n- **Milestone 1:** Python Foundations\n- **Milestone 2:** Scikit-Learn Classification\n- **Milestone 3:** Neural Network Capstone.";
+              renderMilestones([
+                { id: 1, title: "Milestone 1: Python Data Science Foundations", description: "Master NumPy, Pandas, Matplotlib.", is_completed: false },
+                { id: 2, title: "Milestone 2: Core Machine Learning Models", description: "Implement classification using Scikit-Learn.", is_completed: false },
+                { id: 3, title: "Milestone 3: Deep Learning Capstone", description: "Train and deploy a neural network.", is_completed: false }
+              ]);
+            } else if (agent === "Resource Discovery") {
+              responseText += "\n\n---\n\n### 🔍 Resource Hunter (Color: Purple)\n\nFound tutorials:\n- [GitHub: awesome-ml](https://github.com/josephmisiti/awesome-machine-learning)\n- [YouTube: freeCodeCamp ML Course](https://www.youtube.com/watch?v=GwIo3g1ilaA)";
+            } else if (agent === "Progress Evaluation") {
+              responseText += "\n\n---\n\n### 📈 Progress Evaluator (Color: Green)\n\nSubmit your code via the Milestones page to get review scores!";
+            } else if (agent === "Motivation Coach") {
+              responseText += "\n\n---\n\n### ⚡ Motivation Coach (Color: Orange)\n\nKeep coding! A 4-day streak is solid momentum! 🔥";
+            }
+          });
+          
+          appendLocalMessage("assistant", responseText, "Orchestrator");
+          // Mark as completed
+          const logs = activeAgents.map(a => ({ agent: a, status: "completed" }));
+          updateFinalRoutingGraph(logs);
+        }, 1200);
+      }
+    }
+
+    async function toggleMilestone(id, currentStatus) {
+      const nextStatus = !currentStatus;
+      if (isBackendOnline) {
+        try {
+          await fetch(`${API_BASE}/milestones/${id}/toggle`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ is_completed: nextStatus })
+          });
+          fetchSessionData();
+        } catch (err) {
+          console.error(err);
+        }
+      } else {
+        // Toggle locally
+        alert("Milestone updated locally!");
+      }
+    }
+
+    async function submitProject(e) {
+      if (e) e.preventDefault();
+      const title = document.getElementById("project-title").value.trim();
+      const desc = document.getElementById("project-desc").value.trim();
+      const code = document.getElementById("project-code").value.trim();
+      
+      if (!title || !desc) return;
+      
+      document.getElementById("project-title").value = "";
+      document.getElementById("project-desc").value = "";
+      document.getElementById("project-code").value = "";
+
+      appendLocalMessage("user", `**Submitting Project:** ${title}\n\n*Description:* ${desc}\n\n*Code Snippet:*\n\`\`\`python\n${code}\n\`\`\``);
+      highlightRoutingGraph(["Progress Evaluation"]);
+      switchTab("chat");
+
+      if (isBackendOnline) {
+        try {
+          const response = await fetch(`${API_BASE}/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              session_id: sessionId,
+              message: `Evaluate project: "${title}". Description: ${desc}. Code: \`\`\`python\n${code}\n\`\`\``
+            })
+          });
+          if (response.ok) {
+            const data = await response.json();
+            appendLocalMessage("assistant", data.response, "Orchestrator");
+            updateFinalRoutingGraph(data.execution_logs);
+            fetchSessionData();
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      } else {
+        setTimeout(() => {
+          updateFinalRoutingGraph([{ agent: "Progress Evaluation", status: "completed" }]);
+          appendLocalMessage("assistant", "### 📈 Progress Evaluator (Simulated Green)\n\n**Submission Grade:** `88/100` ⭐\n\n**Feedback:** Good coding conventions. Add detailed database check blocks next time.\n\n✅ *Milestone 3 completed!*", "Orchestrator");
+          
+          // Append project
+          const container = document.getElementById("portfolio-list");
+          const item = document.createElement("div");
+          item.className = "p-6 bg-slate-900/60 rounded-xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6";
+          item.innerHTML = `
+            <div class="flex-1 space-y-2">
+              <h4 class="text-sm font-bold text-white">${title}</h4>
+              <p class="text-xs text-slate-400">${desc}</p>
+              <div class="p-3.5 bg-slate-950 rounded-lg text-xs border border-slate-800/80 mt-3">
+                <span class="text-[9px] uppercase font-mono text-green-400 font-bold block mb-1">Evaluator Feedback</span>
+                Good coding structure. Clean layout.
+              </div>
+            </div>
+            <div class="flex flex-col items-center justify-center p-5 bg-green-500/10 border border-green-500/20 rounded-xl min-w-[120px]">
+              <span class="text-[10px] font-mono text-green-400 tracking-wider">GRADE SCORE</span>
+              <span class="text-3xl font-extrabold text-white mt-1">88</span>
+            </div>
+          `;
+          container.appendChild(item);
+        }, 1200);
+      }
+    }
+
+    async function saveSettings(e) {
+      if (e) e.preventDefault();
+      const isMock = document.getElementById("settings-mock").checked;
+      const model = document.getElementById("settings-model").value;
+      
+      if (isBackendOnline) {
+        try {
+          await fetch(`${API_BASE}/settings`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mock_mode: isMock, gemini_model: model })
+          });
+          alert("Configurations saved!");
+        } catch (err) {
+          console.error(err);
+        }
+      } else {
+        alert("Local settings updated!");
+      }
+    }
+
+    function appendLocalMessage(role, content, agentName = null) {
+      const list = [{ role, content, agent_name: agentName }];
+      const chatMessages = document.getElementById("chat-messages");
+      
+      const isUser = role === "user";
+      const bubble = document.createElement("div");
+      
+      let borderStyle = "bg-brand-card/40 border-slate-700/50 max-w-[90%]";
+      if (isUser) {
+        borderStyle = "bg-brand-blue/15 border-brand-blue/30 text-slate-100 ml-auto max-w-[80%]";
+      } else {
+        if (content.includes("Blue") || content.includes("Guidance")) borderStyle = "border-l-4 border-l-blue-500 bg-brand-card/50 max-w-[90%]";
+        else if (content.includes("Cyan") || content.includes("Roadmap")) borderStyle = "border-l-4 border-l-cyan-400 bg-brand-card/50 max-w-[90%]";
+        else if (content.includes("Purple") || content.includes("Resource")) borderStyle = "border-l-4 border-l-purple-500 bg-brand-card/50 max-w-[90%]";
+        else if (content.includes("Green") || content.includes("Evaluator")) borderStyle = "border-l-4 border-l-green-500 bg-brand-card/50 max-w-[90%]";
+        else if (content.includes("Orange") || content.includes("Coach")) borderStyle = "border-l-4 border-l-orange-500 bg-brand-card/50 max-w-[90%]";
+      }
+      
+      bubble.className = `p-5 rounded-2xl border text-sm leading-relaxed transition-all shadow-sm ${borderStyle}`;
+      
+      let label = "";
+      if (!isUser) {
+        label = `<div class="flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-wider text-brand-cyan mb-2">
+          <span class="w-1.5 h-1.5 bg-brand-cyan rounded-full shadow-glow"></span>
+          ${agentName || "Orchestrator"}
+        </div>`;
+      }
+
+      bubble.innerHTML = `${label}<div class="whitespace-pre-wrap">${convertMarkdownToHTML(content)}</div>`;
+      chatMessages.appendChild(bubble);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function highlightRoutingGraph(activeList) {
+      // Set all nodes to low opacity
+      resetGraphUI();
+      
+      activeList.forEach(agent => {
+        let nodeId = "";
+        if (agent === "Career Advisor") nodeId = "node-career";
+        else if (agent === "Learning Planner") nodeId = "node-planner";
+        else if (agent === "Resource Discovery") nodeId = "node-resource";
+        else if (agent === "Progress Evaluation") nodeId = "node-evaluator";
+        else if (agent === "Motivation Coach") nodeId = "node-coach";
+        
+        if (nodeId) {
+          const el = document.getElementById(nodeId);
+          el.className = el.className.replace("opacity-60 border-slate-800/80", "opacity-100 animate-pulse-glow border-brand-cyan shadow-glow");
+          el.querySelector(".node-badge").classList.remove("hidden");
+        }
+      });
+    }
+
+    function updateFinalRoutingGraph(logs) {
+      resetGraphUI();
+      logs.forEach(log => {
+        let nodeId = "";
+        if (log.agent === "Career Advisor") nodeId = "node-career";
+        else if (log.agent === "Learning Planner") nodeId = "node-planner";
+        else if (log.agent === "Resource Discovery") nodeId = "node-resource";
+        else if (log.agent === "Progress Evaluation") nodeId = "node-evaluator";
+        else if (log.agent === "Motivation Coach") nodeId = "node-coach";
+        
+        if (nodeId) {
+          const el = document.getElementById(nodeId);
+          if (log.status === "completed") {
+            el.className = el.className.replace("opacity-60 border-slate-800/80", "opacity-100 border-green-500 shadow-sm");
+            const badge = el.querySelector(".node-badge");
+            badge.innerText = "READY";
+            badge.className = "node-badge text-[8px] bg-green-500/10 text-green-400 px-1 py-0.2 rounded";
+            badge.classList.remove("hidden");
+          }
+        }
+      });
+    }
+
+    function resetGraphUI() {
+      const nodes = ["node-career", "node-planner", "node-resource", "node-evaluator", "node-coach"];
+      nodes.forEach(id => {
+        const el = document.getElementById(id);
+        el.className = "p-3 bg-slate-900 border border-slate-800 text-center rounded-xl opacity-60 transition-all duration-300";
+        const badge = el.querySelector(".node-badge");
+        badge.classList.add("hidden");
+        badge.innerText = "ACTIVE";
+        
+        let colorTheme = "bg-orange-500/10 text-orange-400";
+        if (id === "node-career") colorTheme = "bg-blue-500/10 text-blue-400";
+        else if (id === "node-planner") colorTheme = "bg-cyan-500/10 text-cyan-400";
+        else if (id === "node-resource") colorTheme = "bg-purple-500/10 text-purple-400";
+        else if (id === "node-evaluator") colorTheme = "bg-green-500/10 text-green-400";
+        
+        badge.className = `node-badge text-[8px] ${colorTheme} px-1 py-0.2 rounded`;
+      });
+    }
+
+    function mockRoutingTrace(text) {
+      const p = text.toLowerCase();
+      const is_onboarding = ["learn", "become", "career", "start"].some(x => p.includes(x));
+      if (is_onboarding) return ["Career Advisor", "Learning Planner", "Resource Discovery"];
+      if (["github", "youtube", "kaggle", "resource"].some(x => p.includes(x))) return ["Resource Discovery"];
+      if (["evaluate", "quiz", "code"].some(x => p.includes(x))) return ["Progress Evaluation"];
+      if (["motivate", "streak", "tired"].some(x => p.includes(x))) return ["Motivation Coach"];
+      return ["Career Advisor", "Motivation Coach"];
+    }
+
+    function switchTab(tabId) {
+      activeTab = tabId;
+      const tabs = ["chat", "roadmap", "portfolio", "settings"];
+      tabs.forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add("hidden");
+        document.getElementById(`tab-btn-${t}`).className = "flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-slate-400 hover:bg-slate-900/50 hover:text-slate-100";
+      });
+
+      document.getElementById(`tab-${tabId}`).classList.remove("hidden");
+      document.getElementById(`tab-btn-${tabId}`).className = "flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all bg-brand-blue text-white shadow-glow-blue";
+      
+      const titles = {
+        chat: "ACTIVE CHAT TRANSCRIPT",
+        roadmap: "SYLLABUS MILESTONES",
+        portfolio: "GRADED SUBMISSIONS PORTFOLIO",
+        settings: "DEVELOPER CONTROL BOARD"
+      };
+      document.getElementById("header-title").innerText = titles[tabId];
+    }
+
+    function resetSession() {
+      if (confirm("Reset current session? This clears messaging history.")) {
+        sessionId = "session_" + Math.random().toString(36).substring(2, 9);
+        document.getElementById("session-id-display").innerText = sessionId;
+        fetchSessionData();
+      }
+    }
+
+    function convertMarkdownToHTML(text) {
+      if (!text) return "";
+      let html = text
+        .replace(/### (.*)/g, '<h3 class="text-sm font-bold text-white mt-4 mb-2">$1</h3>')
+        .replace(/#### (.*)/g, '<h4 class="text-xs font-bold text-slate-200 mt-3 mb-1.5">$1</h4>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code class="bg-slate-900 text-brand-cyan px-1.5 py-0.5 rounded font-mono text-xs">$1</code>')
+        .replace(/- (.*)/g, '<li class="ml-4 list-disc text-slate-300">$1</li>');
+      return html;
+    }
+
+    function loadMockData() {
+      renderMessages([]);
+      renderMilestones([]);
+      renderPortfolio([]);
+    }
+  </script>
+</body>
+</html>
