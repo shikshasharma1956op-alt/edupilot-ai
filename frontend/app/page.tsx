@@ -235,8 +235,8 @@ export default function Dashboard() {
     setIsLoading(false);
   };
 
-  const orchestratorRoutingLogic = (text: str): string[] => {
-    const p = text.lower ? text.lower() : text.toLowerCase();
+  const orchestratorRoutingLogic = (text: string): string[] => {
+    const p = text.toLowerCase();
     const is_onboarding = ["learn", "become", "career", "start"].some(x => p.includes(x));
     if (is_onboarding) return ["Career Advisor", "Learning Planner", "Resource Discovery"];
     if (["github", "youtube", "kaggle", "resource"].some(x => p.includes(x))) return ["Resource Discovery"];
@@ -245,7 +245,7 @@ export default function Dashboard() {
     return ["Career Advisor", "Motivation Coach"];
   };
 
-  const getAgentColorName = (name: str): string => {
+  const getAgentColorName = (name: string): string => {
     if (name === "Career Advisor") return "blue";
     if (name === "Learning Planner") return "cyan";
     if (name === "Resource Discovery") return "purple";
