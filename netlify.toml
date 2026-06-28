@@ -1,0 +1,18 @@
+# Netlify Configuration File
+# This file automatically configures Netlify to build the Next.js frontend from the sub-folder.
+
+[build]
+  # The directory where the frontend application resides
+  base = "frontend"
+  
+  # The command Netlify runs to build the Next.js application
+  command = "npm run build"
+  
+  # The directory containing the built assets to publish
+  publish = ".next"
+
+[[redirects]]
+  # Redirect all SPA client-side routes to the Next.js handler
+  from = "/*"
+  status = 200
+  to = "/index.html"
