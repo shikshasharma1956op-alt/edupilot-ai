@@ -8,7 +8,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/data:/app/data
+      - ./backend/data:/app/backend/data
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - MOCK_MODE=${MOCK_MODE:-true}
